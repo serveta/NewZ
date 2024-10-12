@@ -1,4 +1,4 @@
-# newz
+# NewZ
 
 COMP205 project.
 
