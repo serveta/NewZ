@@ -3,9 +3,14 @@ import 'package:newz/widget_tree.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 Future<void> main() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
     await Firebase.initializeApp();
     runApp(const MyApp());
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -17,7 +22,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: Colors.orange,
-      )
+        scaffoldBackgroundColor: Colors.white,
+      ),
+      home: const WidgetTree(),
     );
   }
 }
