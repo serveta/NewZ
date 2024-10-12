@@ -1,0 +1,21 @@
+**************************************************************
+alttaki packageları ekle
+
+import 'package:newz/widget_tree.dart';
+import 'package:firebase_core/firebase_core.dart';
+**************************************************************
+
+**************************************************************
+main fonksiyonunu bu şekilde değiştir ve içindekileri ekle
+
+Future<void> main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp();
+}
+**************************************************************
+
+**************************************************************
+build fonsiyonunun içinde MaterialApp içine alttakini ekle
+
+home: const WidgetTree()
+**************************************************************
