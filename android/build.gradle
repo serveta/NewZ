@@ -6,13 +6,20 @@ allprojects {
 }
 
 rootProject.buildDir = "../build"
+
 subprojects {
+    // Configure each subproject to use a specific build directory
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(":app")
+    
+    // Ensure each subproject's clean task is executed when the root clean task is called
+    afterEvaluate {
+        tasks.named('clean') {
+            dependsOn project.tasks.named('clean')
+        }
+    }
 }
 
+// Clean task to delete the root project's build directory
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
