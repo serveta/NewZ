@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:newz/widget_tree.dart';
+import 'package:newz/widget_tree.dart'; 
 import 'package:firebase_core/firebase_core.dart';
 
 Future<void> main() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    await Firebase.initializeApp();
-    runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -17,7 +17,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: Colors.orange,
-      )
+      ),
+      home: const WidgetTree(), // Set the home property to your main widget
     );
   }
 }
