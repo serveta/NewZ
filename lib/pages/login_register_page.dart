@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../auth.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class CreateAccountPage extends StatefulWidget {
+  const CreateAccountPage({Key? key}) : super(key: key);
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<CreateAccountPage> createState() => _CreateAccountPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _CreateAccountPageState extends State<CreateAccountPage> {
   String? errorMessage = '';
-  bool isLogin = true;
-
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
 
-  Future<void> signInWithEmailAndPassword() async {
+  Future<void> createUserWithEmailAndPassword() async {
     try {
-      await Auth().signInWihEmailAndPassword(email: _controllerEmail.text, password: _controllerPassword.text);
+      await Auth().createUserWihEmailAndPassword(
+        email: _controllerEmail.text,
+        password: _controllerPassword.text,
+      );
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;
@@ -26,70 +28,116 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> createUsersWithEmailAndPassword() async {
+  Future<void> signInWithGoogle() async {
     try {
-      await Auth().createUserWihEmailAndPassword(email: _controllerEmail.text, password: _controllerPassword.text);
-    } on FirebaseAuthException catch (e) {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser?.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
+      await FirebaseAuth.instance.signInWithCredential(credential);
+    } catch (e) {
       setState(() {
-        errorMessage = e.message;
+        errorMessage = e.toString();
       });
     }
-  }
-
-  Widget _title() {
-    return const Text('NewZ Login or Register');
-  }
-
-  Widget _entryField(
-    String title,
-    TextEditingController controller,
-  ) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: title,
-      ),
-    );
-  }
-
-  Widget _errorMessage() {
-    return Text(errorMessage == '' ? '' : '$errorMessage');
-  }
-
-  Widget _submitButton(){
-    return ElevatedButton(onPressed: isLogin ? signInWithEmailAndPassword : createUsersWithEmailAndPassword, child: Text(isLogin ? 'Login' : 'Register'),);
-  }
-
-  Widget _loginOrRegisterButton(){
-    return TextButton(onPressed: () {
-      setState(() {
-        isLogin = !isLogin;
-      });
-    }, child: Text(isLogin ? "Register Instead": "Login Instead"));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: _title(),
-      ),
-      body: Container(
-        height: double.infinity,
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget> [
-            _entryField('Email', _controllerEmail),
-            _entryField('Password', _controllerPassword),
-            _errorMessage(),
-            _submitButton(),
-            _loginOrRegisterButton(),
-          ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 40),
+              const Text(
+                'Create\nAccount',
+                style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 40),
+              TextField(
+                controller: _controllerEmail,
+                decoration: const InputDecoration(
+                  hintText: 'E-mail',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(30)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _controllerPassword,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(30)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: createUserWithEmailAndPassword,
+                child: const Text('Sign Up'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text('--------------- Or ---------------',
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: signInWithGoogle,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.network('https://www.google.com/favicon.ico',
+                        height: 24),
+                    const SizedBox(width: 10),
+                    const Text('Sign up with Google'),
+                  ],
+                ),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+              ),
+              const Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Do you have already account?'),
+                  TextButton(
+                    onPressed: () {
+                      // Navigate to login page
+                    },
+                    child: const Text('Log in',
+                        style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ),
+              Text(
+                errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-} 
+}

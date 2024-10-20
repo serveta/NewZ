@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:newz/widget_tree.dart'; 
+import 'package:newz/widget_tree.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'splashScreen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: Colors.orange,
       ),
-      home: const WidgetTree(), // Set the home property to your main widget
+      home: SplashScreen(), // Set the home property to your main widget
     );
   }
 }
