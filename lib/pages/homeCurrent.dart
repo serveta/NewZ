@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:newz/auth.dart';
+import 'package:newz/pages/favorite_topics_screen.dart';
 
 class VerticalSwipe extends StatelessWidget {
   const VerticalSwipe({Key? key}) : super(key: key);
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +30,21 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   bool isDarkMode = false;
 
+        Future<void> signOut() async {
+    await Auth().signOut();
+  }
+
+    Widget _signOutButton(){
+    return ElevatedButton(onPressed: signOut, child: const Text('Sign Out'),);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Haber Akışı'),
         actions: [
+          _signOutButton(),
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
@@ -68,11 +82,17 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             ListTile(
-              title: const Text('İlgi Alanları'),
-              onTap: () {
-                // TODO: Implement interests selection
-              },
-            ),
+  title: const Text('İlgi Alanları'),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FavoriteTopicsScreen(), // Navigate to FavoriteTopicsScreen
+      ),
+    );
+  },
+),
+
             ListTile(
               title: const Text('Dil Tercihi'),
               onTap: () {
