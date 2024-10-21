@@ -4,7 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../auth.dart';
 
 class CreateAccountPage extends StatefulWidget {
-  const CreateAccountPage({Key? key}) : super(key: key);
+  const CreateAccountPage({super.key});
 
   @override
   State<CreateAccountPage> createState() => _CreateAccountPageState();
@@ -12,15 +12,32 @@ class CreateAccountPage extends StatefulWidget {
 
 class _CreateAccountPageState extends State<CreateAccountPage> {
   String? errorMessage = '';
+  bool isLogin = false;
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
+  final Auth _auth = Auth();
 
   Future<void> createUserWithEmailAndPassword() async {
     try {
-      await Auth().createUserWihEmailAndPassword(
+      await _auth.createUserWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
+      // Hesap oluşturma başarılı olduğunda yapılacak işlemler
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        errorMessage = e.message;
+      });
+    }
+  }
+
+  Future<void> signInWithEmailAndPassword() async {
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: _controllerEmail.text,
+        password: _controllerPassword.text,
+      );
+      // Giriş başarılı olduğunda yapılacak işlemler
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;
@@ -30,14 +47,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
   Future<void> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      final GoogleSignInAuthentication? googleAuth =
-          await googleUser?.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth?.accessToken,
-        idToken: googleAuth?.idToken,
-      );
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      await _auth.signInWithGoogle();
+      // Google ile giriş başarılı olduğunda yapılacak işlemler
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
@@ -55,9 +66,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              const Text(
-                'Create\nAccount',
-                style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+              Text(
+                isLogin ? 'Login' : 'Create\nAccount',
+                style:
+                    const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 40),
               TextField(
@@ -82,8 +94,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: createUserWithEmailAndPassword,
-                child: const Text('Sign Up'),
+                onPressed: isLogin
+                    ? signInWithEmailAndPassword
+                    : createUserWithEmailAndPassword,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
@@ -91,6 +104,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
+                child: Text(isLogin ? 'Login' : 'Sign Up'),
               ),
               const SizedBox(height: 20),
               const Text('--------------- Or ---------------',
@@ -98,15 +112,6 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: signInWithGoogle,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.network('https://www.google.com/favicon.ico',
-                        height: 24),
-                    const SizedBox(width: 10),
-                    const Text('Sign up with Google'),
-                  ],
-                ),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black,
                   backgroundColor: Colors.white,
@@ -115,18 +120,33 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.network('https://www.google.com/favicon.ico',
+                        height: 24),
+                    const SizedBox(width: 10),
+                    const Text('Sign in with Google'),
+                  ],
+                ),
               ),
               const Spacer(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Do you have already account?'),
+                  Text(isLogin
+                      ? 'Don\'t have an account?'
+                      : 'Already have an account?'),
                   TextButton(
                     onPressed: () {
-                      // Navigate to login page
+                      setState(() {
+                        isLogin = !isLogin;
+                      });
                     },
-                    child: const Text('Log in',
-                        style: TextStyle(color: Colors.red)),
+                    child: Text(
+                      isLogin ? 'Sign Up' : 'Login',
+                      style: const TextStyle(color: Colors.red),
+                    ),
                   ),
                 ],
               ),
