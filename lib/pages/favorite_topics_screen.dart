@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FavoriteTopicsScreen extends StatefulWidget {
+  const FavoriteTopicsScreen({super.key});
+
   @override
   _FavoriteTopicsScreenState createState() => _FavoriteTopicsScreenState();
 }
@@ -53,7 +55,7 @@ void _loadFavorites() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Select Favorite Topics')),
+      appBar: AppBar(title: const Text('Select Favorite Topics')),
       body: Column(
         children: [
           Expanded(

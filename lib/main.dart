@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:newz/widget_tree.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'splashScreen.dart';
 
@@ -12,7 +10,7 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: Colors.orange,
       ),
-      home: SplashScreen(), // Set the home property to your main widget
+      home: const SplashScreen(), // Set the home property to your main widget
     );
   }
 }

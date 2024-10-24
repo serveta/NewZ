@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class VerticalSwipe extends StatelessWidget {
-  const VerticalSwipe({Key? key}) : super(key: key);
+  const VerticalSwipe({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class VerticalSwipe extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -152,7 +152,7 @@ class _MainScreenState extends State<MainScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => FavoriteTopicsScreen(),
+                    builder: (context) => const FavoriteTopicsScreen(),
                   ),
                 );
               },
@@ -222,12 +222,12 @@ class NewsCard extends StatelessWidget {
   final VoidCallback onShare;
 
   const NewsCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.summary,
     required this.imageUrl,
     required this.onShare,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +282,7 @@ class NewsCard extends StatelessWidget {
 class NewsDetailScreen extends StatelessWidget {
   final dynamic article;
 
-  const NewsDetailScreen({Key? key, required this.article}) : super(key: key);
+  const NewsDetailScreen({super.key, required this.article});
 
   @override
   Widget build(BuildContext context) {
