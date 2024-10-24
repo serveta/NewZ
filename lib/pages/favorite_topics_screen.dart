@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:newz/pages/homeCurrent.dart'; // Ana sayfa (haber akışı) import edildi
 
 class FavoriteTopicsScreen extends StatefulWidget {
   const FavoriteTopicsScreen({super.key});
@@ -13,7 +14,15 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  List<String> topics = ['Sports', 'Technology', 'Health', 'Business'];
+  List<String> topics = [
+    'Sports',
+    'Technology',
+    'Health',
+    'Business',
+    'Entertainment',
+    'General',
+    'Science'
+  ];
   List<String> favoriteTopics = [];
 
   @override
@@ -22,34 +31,39 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
     _loadFavorites();
   }
 
-  // Load favorite topics from Firestore
-void _loadFavorites() async {
-  User? user = _auth.currentUser;
+  // Firestore'dan favori konuları yükleme
+  void _loadFavorites() async {
+    User? user = _auth.currentUser;
 
-  if (user != null) {
-    DocumentSnapshot snapshot = await _firestore.collection('users').doc(user.uid).get();
-    if (snapshot.exists) {
-      var data = snapshot.data() as Map<String, dynamic>; // Cast to Map<String, dynamic>
-      setState(() {
-        favoriteTopics = List<String>.from(data['favoriteTopics'] ?? []); // Access the data correctly
-      });
+    if (user != null) {
+      DocumentSnapshot snapshot =
+          await _firestore.collection('users').doc(user.uid).get();
+      if (snapshot.exists) {
+        var data = snapshot.data() as Map<String, dynamic>;
+        setState(() {
+          favoriteTopics = List<String>.from(data['favoriteTopics'] ?? []);
+        });
+      }
     }
   }
-}
 
-
-  // Save favorite topics to Firestore
+  // Firestore'a favori konuları kaydetme
   void _saveFavorites(List<String> selectedTopics) async {
     User? user = _auth.currentUser;
 
     if (user != null) {
       await _firestore.collection('users').doc(user.uid).set({
         'favoriteTopics': selectedTopics,
-      }, SetOptions(merge: true)); // Merge to avoid overwriting other fields
-
-      // Reload favorites after saving
-      _loadFavorites();
+      }, SetOptions(merge: true));
     }
+  }
+
+  void _syncAndNavigate() {
+    _saveFavorites(favoriteTopics);
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MainScreen()),
+    );
   }
 
   @override
@@ -72,11 +86,17 @@ void _loadFavorites() async {
                       } else {
                         favoriteTopics.remove(topics[index]);
                       }
-                      _saveFavorites(favoriteTopics); // Save changes to Firestore
                     });
                   },
                 );
               },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: _syncAndNavigate,
+              child: const Text('Sync and Go to News Feed'),
             ),
           ),
         ],
