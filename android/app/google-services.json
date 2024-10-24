@@ -9,10 +9,23 @@
       "client_info": {
         "mobilesdk_app_id": "1:660294213786:android:1a844e7a4d15ec96013f23",
         "android_client_info": {
-          "package_name": "com.example.newz"
+          "package_name": "com.newz"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "660294213786-qq7ll59c7dst5rtu9hqg6ks5q9ks3rs5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.newz",
+            "certificate_hash": "74e7cf270f8193b479240e2091f24406a95cf671"
+          }
+        },
+        {
+          "client_id": "660294213786-g67e9gv1b6hk1o3j9gfa5eff90re790p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyANjUAyUWCnP845tl7NRfPh4YBWYW4dHc4"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "660294213786-g67e9gv1b6hk1o3j9gfa5eff90re790p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

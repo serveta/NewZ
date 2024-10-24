@@ -29,18 +29,17 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  bool isDarkMode = false;
   List<dynamic> articles = [];
   bool isLoading = false;
   int page = 1;
-  List<String> favoriteTopics = []; // Favori konular burada tutulacak
+  List<String> favoriteTopics = [];
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
-    _loadFavorites(); // Favori konuları yükle
+    _loadFavorites();
   }
 
   Future<void> _loadFavorites() async {
@@ -54,20 +53,13 @@ class _MainScreenState extends State<MainScreen> {
         setState(() {
           favoriteTopics = List<String>.from(data['favoriteTopics'] ?? []);
         });
-        fetchNews(); // Haberleri favori konulara göre çek
+        fetchNews();
       }
     }
   }
 
   Future<void> signOut() async {
     await Auth().signOut();
-  }
-
-  Widget _signOutButton() {
-    return ElevatedButton(
-      onPressed: signOut,
-      child: const Text('Sign Out'),
-    );
   }
 
   Future<void> fetchNews() async {
@@ -78,9 +70,9 @@ class _MainScreenState extends State<MainScreen> {
     });
 
     String apiKey = '56491c31b2d1407f83cc723cdfe6e4f7';
-    String favoriteTopicsQuery = favoriteTopics.join(' OR '); // Favori konuları birleştir
+    String favoriteTopicsQuery = favoriteTopics.join(' OR ');
     String url =
-        'https://newsapi.org/v2/everything?q=$favoriteTopicsQuery&page=$page&pageSize=10&language=tr&apiKey=$apiKey';
+        'https://newsapi.org/v2/everything?q=$favoriteTopicsQuery&page=$page&pageSize=10&language=en&apiKey=$apiKey';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -108,22 +100,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Haber Akışı'),
-        actions: [
-          _signOutButton(),
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              // TODO: Implement notifications
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              // TODO: Implement user profile
-            },
-          ),
-        ],
+        title: const Text('NewZ'),
       ),
       drawer: Drawer(
         child: ListView(
@@ -131,23 +108,13 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Colors.red,
               ),
-              child: Text('Ayarlar'),
+              child: Text('NewZ'),
             ),
             ListTile(
-              title: const Text('Aydınlık / Karanlık Mod'),
-              trailing: Switch(
-                value: isDarkMode,
-                onChanged: (value) {
-                  setState(() {
-                    isDarkMode = value;
-                  });
-                },
-              ),
-            ),
-            ListTile(
-              title: const Text('İlgi Alanları'),
+              leading: const Icon(Icons.topic),
+              title: const Text('News Topics'),
               onTap: () {
                 Navigator.push(
                   context,
@@ -158,10 +125,17 @@ class _MainScreenState extends State<MainScreen> {
               },
             ),
             ListTile(
-              title: const Text('Dil Tercihi'),
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
               onTap: () {
-                // TODO: Implement language selection
+                // TODO: Implement settings
               },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Sign Out'),
+              onTap: signOut,
             ),
           ],
         ),
@@ -194,9 +168,9 @@ class _MainScreenState extends State<MainScreen> {
                 );
               },
               child: NewsCard(
-                title: article['title'] ?? 'Başlık Yok',
-                summary: article['description'] ?? 'Açıklama Yok',
-                imageUrl: article['urlToImage'] ?? '', // Add image URL
+                title: article['title'] ?? 'No title',
+                summary: article['description'] ?? 'No description',
+                imageUrl: article['urlToImage'] ?? '',
                 onShare: () {
                   // TODO: Implement share functionality
                 },
@@ -204,12 +178,6 @@ class _MainScreenState extends State<MainScreen> {
             );
           },
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement AI-powered news summary
-        },
-        child: const Icon(Icons.mic),
       ),
     );
   }
@@ -236,18 +204,26 @@ class NewsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          imageUrl.isNotEmpty
-              ? Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  height: 200,
-                  width: double.infinity,
-                )
-              : Container(
+          if (imageUrl.isNotEmpty)
+            Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              height: 200,
+              width: double.infinity,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
                   height: 200,
                   color: Colors.grey,
-                  child: const Center(child: Text('Resim Yok')),
-                ),
+                  child: const Center(child: Text('Failed to load image')),
+                );
+              },
+            )
+          else
+            Container(
+              height: 200,
+              color: Colors.grey,
+              child: const Center(child: Text('No image')),
+            ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -288,40 +264,44 @@ class NewsDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Haber Detayı'),
+        title: const Text('News Detail'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView( // İçerik uzun olursa kaydırılabilir yapıyoruz
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              article['urlToImage'] != null
-                  ? Image.network(article['urlToImage'])
-                  : const SizedBox.shrink(),
+              if (article['urlToImage'] != null)
+                Image.network(
+                  article['urlToImage'],
+                  errorBuilder: (context, error, stackTrace) {
+                    return const SizedBox.shrink();
+                  },
+                ),
               const SizedBox(height: 16),
               Text(
-                article['title'] ?? 'Başlık Yok',
+                article['title'] ?? 'No Title',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               Text(
-                'Yayınlanma Tarihi: ${article['publishedAt'] != null ? DateTime.parse(article['publishedAt']).toLocal().toString() : 'Tarih Yok'}',
+                'Published: ${article['publishedAt'] != null ? DateTime.parse(article['publishedAt']).toLocal().toString() : 'No Date'}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
               Text(
-                'Yazar: ${article['author'] ?? 'Bilinmiyor'}',
+                'Author: ${article['author'] ?? 'Unknown'}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
               Text(
-                'Kaynak: ${article['source']['name'] ?? 'Kaynak Yok'}',
+                'Source: ${article['source']['name'] ?? 'No Source'}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
               Text(
-                article['content'] ?? 'İçerik mevcut değil.',
+                article['content'] ?? 'No content available.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],
@@ -331,4 +311,3 @@ class NewsDetailScreen extends StatelessWidget {
     );
   }
 }
-

@@ -12,16 +12,16 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: Colors.orange,
+        primaryColor: Colors.white,
       ),
-      home: SplashScreen(), // Set the home property to your main widget
+      home: const SplashScreen(), // Set the home property to your main widget
     );
   }
 }

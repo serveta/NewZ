@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FavoriteTopicsScreen extends StatefulWidget {
+  const FavoriteTopicsScreen({super.key});
+
   @override
   _FavoriteTopicsScreenState createState() => _FavoriteTopicsScreenState();
 }
@@ -11,7 +13,15 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  List<String> topics = ['Sports', 'Technology', 'Health', 'Business'];
+  List<String> topics = [
+    "Business",
+    "Entertainment",
+    "General",
+    "Health",
+    "Science",
+    "Sports",
+    "Technology"
+  ];
   List<String> favoriteTopics = [];
 
   @override
@@ -21,20 +31,22 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
   }
 
   // Load favorite topics from Firestore
-void _loadFavorites() async {
-  User? user = _auth.currentUser;
+  void _loadFavorites() async {
+    User? user = _auth.currentUser;
 
-  if (user != null) {
-    DocumentSnapshot snapshot = await _firestore.collection('users').doc(user.uid).get();
-    if (snapshot.exists) {
-      var data = snapshot.data() as Map<String, dynamic>; // Cast to Map<String, dynamic>
-      setState(() {
-        favoriteTopics = List<String>.from(data['favoriteTopics'] ?? []); // Access the data correctly
-      });
+    if (user != null) {
+      DocumentSnapshot snapshot =
+          await _firestore.collection('users').doc(user.uid).get();
+      if (snapshot.exists) {
+        var data = snapshot.data()
+            as Map<String, dynamic>; // Cast to Map<String, dynamic>
+        setState(() {
+          favoriteTopics = List<String>.from(
+              data['favoriteTopics'] ?? []); // Access the data correctly
+        });
+      }
     }
   }
-}
-
 
   // Save favorite topics to Firestore
   void _saveFavorites(List<String> selectedTopics) async {
@@ -53,7 +65,7 @@ void _loadFavorites() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Select Favorite Topics')),
+      appBar: AppBar(title: const Text('Select Favorite Topics')),
       body: Column(
         children: [
           Expanded(
@@ -70,7 +82,8 @@ void _loadFavorites() async {
                       } else {
                         favoriteTopics.remove(topics[index]);
                       }
-                      _saveFavorites(favoriteTopics); // Save changes to Firestore
+                      _saveFavorites(
+                          favoriteTopics); // Save changes to Firestore
                     });
                   },
                 );
