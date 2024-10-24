@@ -11,6 +11,7 @@ class CreateAccountPage extends StatefulWidget {
 
 class _CreateAccountPageState extends State<CreateAccountPage> {
   String? errorMessage = '';
+  String? successMessage = '';
   bool isLogin = false;
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
@@ -22,10 +23,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
-      // Hesap oluşturma başarılı olduğunda yapılacak işlemler
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;
+        successMessage = null;
       });
     }
   }
@@ -36,10 +37,33 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
-      // Giriş başarılı olduğunda yapılacak işlemler
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;
+        successMessage = null;
+      });
+    }
+  }
+
+Future<void> resetPassword() async {
+    if (_controllerEmail.text.isEmpty) {
+      setState(() {
+        errorMessage = 'Please enter your email address';
+        successMessage = null;
+      });
+      return;
+    }
+
+    try {
+      await _auth.sendPasswordResetEmail(_controllerEmail.text);
+      setState(() {
+        successMessage = 'Password reset email sent. Please check your inbox.';
+        errorMessage = null;
+      });
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        errorMessage = e.message;
+        successMessage = null;
       });
     }
   }
@@ -47,10 +71,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   Future<void> signInWithGoogle() async {
     try {
       await _auth.signInWithGoogle();
-      // Google ile giriş başarılı olduğunda yapılacak işlemler
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
+        successMessage = null;
       });
     }
   }
@@ -67,8 +91,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               const SizedBox(height: 40),
               Text(
                 isLogin ? 'Login' : 'Create\nAccount',
-                style:
-                    const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 40),
               TextField(
@@ -91,7 +114,19 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+              if (isLogin)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: resetPassword,
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: isLogin
                     ? signInWithEmailAndPassword
@@ -140,6 +175,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                     onPressed: () {
                       setState(() {
                         isLogin = !isLogin;
+                        errorMessage = '';
+                        successMessage = '';
                       });
                     },
                     child: Text(
@@ -149,10 +186,18 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   ),
                 ],
               ),
-              Text(
-                errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              ),
+              if (errorMessage != null && errorMessage!.isNotEmpty)
+                Text(
+                  errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              if (successMessage != null && successMessage!.isNotEmpty)
+                Text(
+                  successMessage!,
+                  style: const TextStyle(color: Colors.green),
+                  textAlign: TextAlign.center,
+                ),
             ],
           ),
         ),
