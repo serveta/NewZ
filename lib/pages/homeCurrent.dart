@@ -5,6 +5,7 @@ import 'package:newz/pages/favorite_topics_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class VerticalSwipe extends StatelessWidget {
   const VerticalSwipe({Key? key}) : super(key: key);
@@ -31,31 +32,78 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   bool isDarkMode = false;
   List<dynamic> articles = [];
+  Set<String> seenArticles = {};
   bool isLoading = false;
   int page = 1;
-  List<String> favoriteTopics = []; // Favori konular burada tutulacak
+  List<String> favoriteTopics = [];
+  List<String> previousFavorites = [];
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
-    _loadFavorites(); // Favori konuları yükle
+    _loadFavorites();
   }
 
-  Future<void> _loadFavorites() async {
-    User? user = _auth.currentUser;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkFavoriteChanges(); // Sayfa her göründüğünde kontrol et
+  }
 
+  Future<void> _checkFavoriteChanges() async {
+    List<String> newFavorites = await _getFavoriteTopics();
+    if (newFavorites.toString() != previousFavorites.toString()) {
+      setState(() {
+        favoriteTopics = newFavorites;
+        previousFavorites = List.from(newFavorites); // Önceki favorileri güncelle
+        articles.clear();
+        page = 1;
+        seenArticles.clear();
+      });
+      fetchNews(); // Favori konular değiştiği için haberleri yeniden çek
+    }
+  }
+Future<List<String>> _getFavoriteTopics() async {
+    User? user = _auth.currentUser;
     if (user != null) {
       DocumentSnapshot snapshot =
           await _firestore.collection('users').doc(user.uid).get();
       if (snapshot.exists) {
         var data = snapshot.data() as Map<String, dynamic>;
-        setState(() {
-          favoriteTopics = List<String>.from(data['favoriteTopics'] ?? []);
-        });
-        fetchNews(); // Haberleri favori konulara göre çek
+        return List<String>.from(data['favoriteTopics'] ?? []);
       }
+    }
+    return [];
+  }
+
+  Future<void> _loadFavorites() async {
+    List<String> loadedFavorites = await _getFavoriteTopics();
+    setState(() {
+      favoriteTopics = loadedFavorites;
+      previousFavorites = List.from(loadedFavorites);
+    });
+    fetchNews(); // İlk favori konulara göre haberleri yükle
+  }
+
+  Future<void> _navigateToFavoriteTopicsScreen() async {
+    final updatedFavorites = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FavoriteTopicsScreen(),
+      ),
+    );
+
+    if (updatedFavorites != null && updatedFavorites is List<String>) {
+      setState(() {
+        favoriteTopics = updatedFavorites;
+        previousFavorites = List.from(updatedFavorites);
+        articles.clear();
+        page = 1;
+        seenArticles.clear();
+      });
+      fetchNews();
     }
   }
 
@@ -71,38 +119,58 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> fetchNews() async {
-    if (isLoading || favoriteTopics.isEmpty) return;
+  if (isLoading) return;
 
-    setState(() {
-      isLoading = true;
-    });
+  setState(() {
+    isLoading = true;
+  });
 
-    String apiKey = '56491c31b2d1407f83cc723cdfe6e4f7';
+  String apiKey = '56491c31b2d1407f83cc723cdfe6e4f7';
+  String url;
+
+  if (favoriteTopics.isNotEmpty) {
+    // Favori konular seçilmişse, konulara göre haberleri çek
     String favoriteTopicsQuery = favoriteTopics.join(' OR '); // Favori konuları birleştir
-    String url =
-        'https://newsapi.org/v2/everything?q=$favoriteTopicsQuery&page=$page&pageSize=10&language=tr&apiKey=$apiKey';
+    DateTime today = DateTime.now();
+    DateTime oneWeekAgo = today.subtract(Duration(days: 7));
+    String formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+    String formattedOneWeekAgo = "${oneWeekAgo.year}-${oneWeekAgo.month.toString().padLeft(2, '0')}-${oneWeekAgo.day.toString().padLeft(2, '0')}";
 
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        Map<String, dynamic> data = json.decode(response.body);
-        List<dynamic> newArticles = data['articles'];
-
-        setState(() {
-          articles.addAll(newArticles);
-          page++;
-        });
-      } else {
-        throw Exception('Failed to load news');
-      }
-    } catch (e) {
-      print('Error fetching news: $e');
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+    url =
+        'https://newsapi.org/v2/everything?q=$favoriteTopicsQuery&from=$formattedOneWeekAgo&to=$formattedToday&sortBy=publishedAt&page=$page&pageSize=10&language=en&apiKey=$apiKey';
+  } else {
+    // Favori konu seçilmemişse, karışık genel haberleri çek
+    url =
+        'https://newsapi.org/v2/top-headlines?country=us&page=$page&pageSize=10&apiKey=$apiKey';
   }
+
+  try {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      Map<String, dynamic> data = json.decode(response.body);
+      List<dynamic> newArticles = data['articles'];
+
+      setState(() {
+        for (var article in newArticles) {
+          if (article['url'] != null && !seenArticles.contains(article['url'])) {
+            // Eğer bu haber daha önce eklenmemişse, ekliyoruz
+            articles.add(article);
+            seenArticles.add(article['url']); // URL'yi kaydediyoruz
+          }
+        }
+        page++;
+      });
+    } else {
+      throw Exception('Failed to load news');
+    }
+  } catch (e) {
+    print('Error fetching news: $e');
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -236,25 +304,14 @@ class NewsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          imageUrl.isNotEmpty
-              ? Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  height: 200,
-                  width: double.infinity,
-                )
-              : Container(
-                  height: 200,
-                  color: Colors.grey,
-                  child: const Center(child: Text('Resim Yok')),
-                ),
+          _buildImage(), // Görsel için özel yöntem
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  title.contains('Removed') ? 'This news may have been removed.' : title,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
@@ -277,58 +334,90 @@ class NewsCard extends StatelessWidget {
       ),
     );
   }
-}
 
-class NewsDetailScreen extends StatelessWidget {
-  final dynamic article;
+  // Görsel için özel yapı
+  Widget _buildImage() {
+    if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
+      return _buildPlaceholder(); // URL geçerli değilse
+    }
 
-  const NewsDetailScreen({Key? key, required this.article}) : super(key: key);
+    // .webp uzantılı görsel kontrolü
+    if (imageUrl.endsWith('.webp')) {
+      return _buildPlaceholder(message: 'Image format not supported');
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Haber Detayı'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView( // İçerik uzun olursa kaydırılabilir yapıyoruz
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              article['urlToImage'] != null
-                  ? Image.network(article['urlToImage'])
-                  : const SizedBox.shrink(),
-              const SizedBox(height: 16),
-              Text(
-                article['title'] ?? 'Başlık Yok',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Yayınlanma Tarihi: ${article['publishedAt'] != null ? DateTime.parse(article['publishedAt']).toLocal().toString() : 'Tarih Yok'}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Yazar: ${article['author'] ?? 'Bilinmiyor'}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Kaynak: ${article['source']['name'] ?? 'Kaynak Yok'}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                article['content'] ?? 'İçerik mevcut değil.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-          ),
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      height: 200,
+      width: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return _buildPlaceholder(message: 'Failed to load image'); // Yüklenemezse
+      },
+    );
+  }
+
+  // Görsel yerine geçecek yapıyı oluşturma
+  Widget _buildPlaceholder({String message = 'No Image'}) {
+    return Container(
+      height: 200,
+      color: Colors.grey,
+      child: Center(
+        child: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
       ),
     );
   }
 }
 
+
+class NewsDetailScreen extends StatefulWidget {
+  final dynamic article;
+
+  const NewsDetailScreen({Key? key, required this.article}) : super(key: key);
+
+  @override
+  _NewsDetailScreenState createState() => _NewsDetailScreenState();
+}
+
+class _NewsDetailScreenState extends State<NewsDetailScreen> {
+  late final WebViewController _controller;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted) // JS modu ayarla
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (url) {
+            setState(() {
+              _isLoading = false; // Sayfa yüklendiğinde durum değişir
+            });
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.article['url'])); // Haber URL'sini yükle
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.article['source']['name'] ?? 'News Source'),
+      ),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(), // Yükleme göstergesi
+            ),
+        ],
+      ),
+    );
+  }
+}
