@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart'; // Clipboard sınıfı için
 import 'package:newz/auth.dart';
 import 'package:newz/pages/favorite_topics_screen.dart';
 import 'package:http/http.dart' as http;
@@ -48,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _checkFavoriteChanges(); // Sayfa her göründüğünde kontrol et
+    _checkFavoriteChanges(); 
   }
 
   Future<void> _checkFavoriteChanges() async {
@@ -56,21 +57,19 @@ class _MainScreenState extends State<MainScreen> {
     if (newFavorites.toString() != previousFavorites.toString()) {
       setState(() {
         favoriteTopics = newFavorites;
-        previousFavorites =
-            List.from(newFavorites); // Önceki favorileri güncelle
+        previousFavorites = List.from(newFavorites);
         articles.clear();
         page = 1;
         seenArticles.clear();
       });
-      fetchNews(); // Favori konular değiştiği için haberleri yeniden çek
+      fetchNews();
     }
   }
 
   Future<List<String>> _getFavoriteTopics() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      DocumentSnapshot snapshot =
-          await _firestore.collection('users').doc(user.uid).get();
+      DocumentSnapshot snapshot = await _firestore.collection('users').doc(user.uid).get();
       if (snapshot.exists) {
         var data = snapshot.data() as Map<String, dynamic>;
         return List<String>.from(data['favoriteTopics'] ?? []);
@@ -85,7 +84,7 @@ class _MainScreenState extends State<MainScreen> {
       favoriteTopics = loadedFavorites;
       previousFavorites = List.from(loadedFavorites);
     });
-    fetchNews(); // İlk favori konulara göre haberleri yükle
+    fetchNews();
   }
 
   Future<void> _navigateToFavoriteTopicsScreen() async {
@@ -123,22 +122,15 @@ class _MainScreenState extends State<MainScreen> {
     String url;
 
     if (favoriteTopics.isNotEmpty) {
-      // Favori konular seçilmişse, konulara göre haberleri çek
-      String favoriteTopicsQuery =
-          favoriteTopics.join(' OR '); // Favori konuları birleştir
+      String favoriteTopicsQuery = favoriteTopics.join(' OR ');
       DateTime today = DateTime.now();
       DateTime oneWeekAgo = today.subtract(Duration(days: 7));
-      String formattedToday =
-          "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-      String formattedOneWeekAgo =
-          "${oneWeekAgo.year}-${oneWeekAgo.month.toString().padLeft(2, '0')}-${oneWeekAgo.day.toString().padLeft(2, '0')}";
+      String formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+      String formattedOneWeekAgo = "${oneWeekAgo.year}-${oneWeekAgo.month.toString().padLeft(2, '0')}-${oneWeekAgo.day.toString().padLeft(2, '0')}";
 
-      url =
-          'https://newsapi.org/v2/everything?q=$favoriteTopicsQuery&from=$formattedOneWeekAgo&to=$formattedToday&sortBy=publishedAt&page=$page&pageSize=10&language=en&apiKey=$apiKey';
+      url = 'https://newsapi.org/v2/everything?q=$favoriteTopicsQuery&sources=bbc-news,daily-mail,national-geographic,mashable,the-wall-street-journal,forbes,the-economist,bbc-sport,fox-sports,cnn,nbc-news,france24,sky-news,abc-news,the-new-york-times,the-washington-post,al-jazeera-english,the-guardian&from=$formattedOneWeekAgo&to=$formattedToday&sortBy=publishedAt&page=$page&pageSize=10&language=en&apiKey=$apiKey';
     } else {
-      // Favori konu seçilmemişse, karışık genel haberleri çek
-      url =
-          'https://newsapi.org/v2/top-headlines?country=us&page=$page&pageSize=10&apiKey=$apiKey';
+      url = 'https://newsapi.org/v2/top-headlines?country=us&page=$page&pageSize=10&apiKey=$apiKey';
     }
 
     try {
@@ -149,11 +141,9 @@ class _MainScreenState extends State<MainScreen> {
 
         setState(() {
           for (var article in newArticles) {
-            if (article['url'] != null &&
-                !seenArticles.contains(article['url'])) {
-              // Eğer bu haber daha önce eklenmemişse, ekliyoruz
+            if (article['url'] != null && !seenArticles.contains(article['url'])) {
               articles.add(article);
-              seenArticles.add(article['url']); // URL'yi kaydediyoruz
+              seenArticles.add(article['url']);
             }
           }
           page++;
@@ -201,9 +191,7 @@ class _MainScreenState extends State<MainScreen> {
             ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
-              onTap: () {
-                // TODO: Implement settings
-              },
+              onTap: () {},
             ),
             const Divider(),
             ListTile(
@@ -216,8 +204,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       body: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
-          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-              !isLoading) {
+          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent && !isLoading) {
             fetchNews();
             return true;
           }
@@ -245,8 +232,13 @@ class _MainScreenState extends State<MainScreen> {
                 title: article['title'] ?? 'No title',
                 summary: article['description'] ?? 'No description',
                 imageUrl: article['urlToImage'] ?? '',
+                source: article['source']['name'] ?? 'Unknown Source',
                 onShare: () {
-                  // TODO: Implement share functionality
+                  Clipboard.setData(ClipboardData(text: article['url'])).then((_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Link copied to clipboard')),
+                    );
+                  });
                 },
               ),
             );
@@ -261,6 +253,7 @@ class NewsCard extends StatelessWidget {
   final String title;
   final String summary;
   final String imageUrl;
+  final String source;
   final VoidCallback onShare;
 
   const NewsCard({
@@ -268,6 +261,7 @@ class NewsCard extends StatelessWidget {
     required this.title,
     required this.summary,
     required this.imageUrl,
+    required this.source,
     required this.onShare,
   });
 
@@ -284,36 +278,18 @@ class NewsCard extends StatelessWidget {
               fit: BoxFit.cover,
               height: 200,
               width: double.infinity,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 200,
-                  color: Colors.grey,
-                  child: const Center(child: Text('Failed to load image')),
-                );
-              },
-            )
-          else
-            Container(
-              height: 200,
-              color: Colors.grey,
-              child: const Center(child: Text('No image')),
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
             ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title.contains('Removed')
-                      ? 'This news may have been removed.'
-                      : title,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
+                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(summary, style: const TextStyle(fontSize: 14)),
                 const SizedBox(height: 8),
-                Text(
-                  summary,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                Text("Source: $source", style: const TextStyle(fontSize: 14, color: Color.fromARGB(255, 158, 96, 3))),
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerRight,
@@ -326,43 +302,6 @@ class NewsCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Görsel için özel yapı
-  Widget _buildImage() {
-    if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
-      return _buildPlaceholder(); // URL geçerli değilse
-    }
-
-    // .webp uzantılı görsel kontrolü
-    if (imageUrl.endsWith('.webp')) {
-      return _buildPlaceholder(message: 'Image format not supported');
-    }
-
-    return Image.network(
-      imageUrl,
-      fit: BoxFit.cover,
-      height: 200,
-      width: double.infinity,
-      errorBuilder: (context, error, stackTrace) {
-        return _buildPlaceholder(
-            message: 'Failed to load image'); // Yüklenemezse
-      },
-    );
-  }
-
-  // Görsel yerine geçecek yapıyı oluşturma
-  Widget _buildPlaceholder({String message = 'No Image'}) {
-    return Container(
-      height: 200,
-      color: Colors.grey,
-      child: Center(
-        child: Text(
-          message,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
       ),
     );
   }
@@ -385,7 +324,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   void initState() {
     super.initState();
     _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted) // JS modu ayarla
+      ..setJavaScriptMode(JavaScriptMode.unrestricted) // JavaScript modu
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (url) {
