@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:newz/pages/profile_screen.dart';
 
 class VerticalSwipe extends StatelessWidget {
   const VerticalSwipe({Key? key}) : super(key: key);
@@ -53,25 +54,16 @@ class _MainScreenState extends State<MainScreen> {
     _loadFavorites();
   }
 
-  static const List<Widget> _widgetOptions = <Widget>[
-    Center(child: Text('Home')),
-    FavoriteTopicsScreen(),
-    Center(child: Text('Profile')),
+  static final List<Widget> _widgetOptions = [
+    const Center(child: Text('Home')),
+    const FavoriteTopicsScreen(),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
-    if (index == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const FavoriteTopicsScreen(),
-        ),
-      );
-    } else {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   Future<String> summarizeArticle(String content) async {
@@ -233,6 +225,72 @@ class _MainScreenState extends State<MainScreen> {
     return date.split('T').first;
   }
 
+  Widget _buildHomeContent() {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+            !isLoading) {
+          fetchNews();
+          return true;
+        }
+        return false;
+      },
+      child: articles.isEmpty && !isLoading
+          ? const Center(child: Text('No news available'))
+          : PageView.builder(
+              scrollDirection: Axis.vertical,
+              itemCount: articles.length + (isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == articles.length) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final article = articles[index];
+                return NewsCard(
+                  title: article['title'] ?? 'No title',
+                  summary: article['description'] ?? 'No description',
+                  imageUrl: article['urlToImage'] ?? '',
+                  source: article['source']['name'] ?? 'Unknown Source',
+                  author: article['author'] ?? 'Unknown Author',
+                  publishedDate: formatDate(article['publishedAt'] ?? ''),
+                  onShare: () {
+                    Clipboard.setData(ClipboardData(text: article['url']))
+                        .then((_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Link copied to clipboard')),
+                      );
+                    });
+                  },
+                  onSummarize: () async {
+                    final content =
+                        article['content'] ?? article['description'] ?? '';
+                    if (content.isNotEmpty) {
+                      final summary = await summarizeArticle(content);
+                      // Show summary dialog
+                      if (mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Summary'),
+                            content: Text(summary),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Close'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    }
+                  },
+                );
+              },
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -268,237 +326,32 @@ class _MainScreenState extends State<MainScreen> {
         ),
         centerTitle: true,
       ),
-      body: Container(
-        color: Colors.white,
-        child: PageView.builder(
-          scrollDirection: Axis.vertical,
-          itemCount: articles.length + (isLoading ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == articles.length) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            final article = articles[index];
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => NewsDetailScreen(article: article),
-                  ),
-                );
-              },
-              child: NewsCard(
-                title: article['title'] ?? 'No title',
-                summary: article['description'] ?? 'No description',
-                imageUrl: article['urlToImage'] ?? '',
-                source: article['source']['name'] ?? 'Unknown Source',
-                author: article['author'] ?? article['source'],
-                publishedDate: formatDate(article['publishedAt']) ?? 'Unknown',
-                onShare: () {
-                  Clipboard.setData(ClipboardData(text: article['url']))
-                      .then((_) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Link copied to clipboard')),
-                    );
-                  });
-                },
-                onSummarize: () async {
-                  final content =
-                      article['content'] ?? article['description'] ?? '';
-                  if (content.isEmpty) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text(
-                            'Summary',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          content:
-                              const Text('No content available to summarize.'),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text(
-                                'Close',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                    return;
-                  }
-
-                  final summary = await summarizeArticle(content);
-
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        backgroundColor: Colors.white,
-                        title: const Text(
-                          'Summary',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                        content: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                summary,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black87,
-                                  height: 1.5,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Text(
-                                  '- Generated by Gemini',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.red.withOpacity(0.1),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text(
-                              'Close',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                        actionsPadding:
-                            const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      );
-                    },
-                  );
-                },
-              ),
-            );
-          },
-        ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          _buildHomeContent(),
+          const FavoriteTopicsScreen(),
+          const ProfileScreen(),
+        ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 5,
-              blurRadius: 7,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          selectedItemColor: Colors.red,
-          unselectedItemColor: Colors.grey,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.normal,
-            fontSize: 12,
+          BottomNavigationBarItem(
+            icon: Icon(Icons.topic),
+            label: 'News Topics',
           ),
-          type: BottomNavigationBarType.fixed,
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.home_outlined),
-              ),
-              activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.home),
-              ),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.favorite_outline),
-              ),
-              activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.favorite),
-              ),
-              label: 'Favorites',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.person_outline),
-              ),
-              activeIcon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.person),
-              ),
-              label: 'Profile',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.red,
+        onTap: _onItemTapped,
       ),
     );
   }
@@ -529,8 +382,7 @@ class NewsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
