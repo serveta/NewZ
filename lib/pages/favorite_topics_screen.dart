@@ -69,38 +69,113 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Select Favorite Topics')),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: topics.length,
-              itemBuilder: (context, index) {
-                return CheckboxListTile(
-                  title: Text(topics[index]),
-                  value: favoriteTopics.contains(topics[index]),
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value == true) {
-                        favoriteTopics.add(topics[index]);
-                      } else {
-                        favoriteTopics.remove(topics[index]);
-                      }
-                    });
-                  },
-                );
-              },
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: const Text(
+            'Favorite Topics',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: Colors.black,
+              shadows: [
+                Shadow(
+                  color: Colors.grey,
+                  offset: Offset(0, 1),
+                  blurRadius: 2,
+                ),
+              ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: _syncAndNavigate,
-              child: const Text('Sync and Go to News Feed'),
-            ),
-          ),
-        ],
+        ),
+        centerTitle: false,
       ),
+      body: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Select your favorite topics to get personalized news',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: topics.length,
+                itemBuilder: (context, index) {
+                  final topic = topics[index];
+                  final isSelected = favoriteTopics.contains(topic);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          favoriteTopics.remove(topic);
+                        } else {
+                          favoriteTopics.add(topic);
+                        }
+                      });
+                    },
+                    child: Card(
+                      color: isSelected ? Colors.red : Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 4,
+                      child: Center(
+                        child: Text(
+                          topic,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: _syncAndNavigate,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            elevation: 5,
+            shadowColor: Colors.black.withOpacity(0.5),
+          ),
+          child: const Text(
+            'Save & Continue',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

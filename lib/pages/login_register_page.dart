@@ -58,100 +58,136 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
               Text(
-                isLogin ? 'Login' : 'Create\nAccount',
-                style:
-                    const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                isLogin ? 'Welcome\nBack' : 'Create\nAccount',
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  height: 1.2,
+                ),
               ),
               const SizedBox(height: 40),
               TextField(
                 controller: _controllerEmail,
-                decoration: const InputDecoration(
-                  hintText: 'E-mail',
+                decoration: InputDecoration(
+                  hintText: 'Email',
+                  filled: true,
+                  fillColor: Colors.grey[100],
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(30)),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               TextField(
                 controller: _controllerPassword,
                 obscureText: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Password',
+                  filled: true,
+                  fillColor: Colors.grey[100],
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(30)),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                ),
+              ),
+              const SizedBox(height: 24),
+              if (errorMessage!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Text(
+                    errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: isLogin
+                      ? signInWithEmailAndPassword
+                      : createUserWithEmailAndPassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: Text(
+                    isLogin ? 'Log In' : 'Sign Up',
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: isLogin
-                    ? signInWithEmailAndPassword
-                    : createUserWithEmailAndPassword,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: signInWithGoogle,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: const BorderSide(color: Colors.grey),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                ),
-                child: Text(isLogin ? 'Login' : 'Sign Up'),
-              ),
-              const SizedBox(height: 20),
-              const Text('--------------- Or ---------------',
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: signInWithGoogle,
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/google_logo.png',
+                        height: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Continue with Google',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.network('https://www.google.com/favicon.ico',
-                        height: 24),
-                    const SizedBox(width: 10),
-                    const Text('Sign in with Google'),
-                  ],
                 ),
               ),
               const Spacer(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(isLogin
-                      ? 'Don\'t have an account?'
-                      : 'Already have an account?'),
+                  Text(
+                    isLogin
+                        ? 'Don\'t have an account? '
+                        : 'Already have an account? ',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                   TextButton(
                     onPressed: () {
                       setState(() {
                         isLogin = !isLogin;
+                        errorMessage = '';
                       });
                     },
                     child: Text(
-                      isLogin ? 'Sign Up' : 'Login',
-                      style: const TextStyle(color: Colors.red),
+                      isLogin ? 'Sign Up' : 'Log In',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
-              ),
-              Text(
-                errorMessage!,
-                style: const TextStyle(color: Colors.red),
               ),
             ],
           ),

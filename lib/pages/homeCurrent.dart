@@ -41,6 +41,7 @@ class _MainScreenState extends State<MainScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late GenerativeModel generativeModel;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -52,10 +53,32 @@ class _MainScreenState extends State<MainScreen> {
     _loadFavorites();
   }
 
+  static const List<Widget> _widgetOptions = <Widget>[
+    Center(child: Text('Home')),
+    FavoriteTopicsScreen(),
+    Center(child: Text('Profile')),
+  ];
+
+  void _onItemTapped(int index) {
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const FavoriteTopicsScreen(),
+        ),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
   Future<String> summarizeArticle(String content) async {
     try {
       final prompt = 'Summarize the following news article:\n$content';
-      final response = await generativeModel.generateContent([Content.text(prompt)]);
+      final response =
+          await generativeModel.generateContent([Content.text(prompt)]);
       return response.text ?? 'No summary available.';
     } catch (e) {
       print('Error summarizing article: $e');
@@ -86,7 +109,8 @@ class _MainScreenState extends State<MainScreen> {
   Future<List<String>> _getFavoriteTopics() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      DocumentSnapshot snapshot = await _firestore.collection('users').doc(user.uid).get();
+      DocumentSnapshot snapshot =
+          await _firestore.collection('users').doc(user.uid).get();
       if (snapshot.exists) {
         var data = snapshot.data() as Map<String, dynamic>;
         return List<String>.from(data['favoriteTopics'] ?? []);
@@ -128,7 +152,6 @@ class _MainScreenState extends State<MainScreen> {
     await Auth().signOut();
   }
 
-
   Future<void> fetchNews() async {
     if (isLoading) return;
 
@@ -139,17 +162,25 @@ class _MainScreenState extends State<MainScreen> {
     String apiKey = '56491c31b2d1407f83cc723cdfe6e4f7';
     DateTime today = DateTime.now();
     DateTime oneWeekAgo = today.subtract(const Duration(days: 7));
-    String formattedToday = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-    String formattedOneWeekAgo = "${oneWeekAgo.year}-${oneWeekAgo.month.toString().padLeft(2, '0')}-${oneWeekAgo.day.toString().padLeft(2, '0')}";
+    String formattedToday =
+        "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+    String formattedOneWeekAgo =
+        "${oneWeekAgo.year}-${oneWeekAgo.month.toString().padLeft(2, '0')}-${oneWeekAgo.day.toString().padLeft(2, '0')}";
 
     Map<String, String> categoryQueries = {
-      'Entertainment': 'singer OR cinema OR movie OR famous OR character OR comedy OR book',
-      'Sports': 'football OR basketball OR tennis OR sports OR soccer OR cricket OR rugby',
-      'Technology': 'technology OR gadgets OR software OR hardware OR AI OR robotics OR innovation',
-      'Health': 'health OR fitness OR wellness OR medicine OR healthcare OR disease OR mental',
-      'Business': 'business OR finance OR economy OR stock OR market OR investment OR startup',
+      'Entertainment':
+          'singer OR cinema OR movie OR famous OR character OR comedy OR book',
+      'Sports':
+          'football OR basketball OR tennis OR sports OR soccer OR cricket OR rugby',
+      'Technology':
+          'technology OR gadgets OR software OR hardware OR AI OR robotics OR innovation',
+      'Health':
+          'health OR fitness OR wellness OR medicine OR healthcare OR disease OR mental',
+      'Business':
+          'business OR finance OR economy OR stock OR market OR investment OR startup',
       'General': 'news OR updates OR general OR popular OR trending',
-      'Science': 'science OR research OR discovery OR physics OR chemistry OR biology OR space',
+      'Science':
+          'science OR research OR discovery OR physics OR chemistry OR biology OR space',
     };
 
     List<List<dynamic>> allNews = [];
@@ -157,7 +188,8 @@ class _MainScreenState extends State<MainScreen> {
     for (String topic in favoriteTopics) {
       String query = categoryQueries[topic] ?? '';
       if (query.isNotEmpty) {
-        String url = 'https://newsapi.org/v2/everything?q=$query&sources=bbc-news,daily-mail,national-geographic,mashable,the-wall-street-journal,forbes,the-economist,bbc-sport,fox-sports,cnn,nbc-news,france24,sky-news,the-new-york-times,the-washington-post,al-jazeera-english,the-guardian&from=$formattedOneWeekAgo&to=$formattedToday&sortBy=relevancy&page=$page&pageSize=5&language=en&apiKey=$apiKey';
+        String url =
+            'https://newsapi.org/v2/everything?q=$query&sources=bbc-news,daily-mail,national-geographic,mashable,the-wall-street-journal,forbes,the-economist,bbc-sport,fox-sports,cnn,nbc-news,france24,sky-news,the-new-york-times,the-washington-post,al-jazeera-english,the-guardian&from=$formattedOneWeekAgo&to=$formattedToday&sortBy=relevancy&page=$page&pageSize=5&language=en&apiKey=$apiKey';
 
         try {
           final response = await http.get(Uri.parse(url));
@@ -175,7 +207,9 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     List<dynamic> mergedNews = [];
-    int maxLength = allNews.map((list) => list.length).fold(0, (prev, curr) => curr > prev ? curr : prev);
+    int maxLength = allNews
+        .map((list) => list.length)
+        .fold(0, (prev, curr) => curr > prev ? curr : prev);
 
     for (int i = 0; i < maxLength; i++) {
       for (var categoryNews in allNews) {
@@ -199,120 +233,266 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NewZ'),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        elevation: 4,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+          ),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
+            Text(
+              'New',
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+                color: Colors.black,
+              ),
+            ),
+            Text(
+              'Z',
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
                 color: Colors.red,
               ),
-              child: Text('NewZ'),
             ),
-            ListTile(
-              leading: const Icon(Icons.topic),
-              title: const Text('News Topics'),
+          ],
+        ),
+        centerTitle: true,
+      ),
+      body: Container(
+        color: Colors.white,
+        child: PageView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: articles.length + (isLoading ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == articles.length) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final article = articles[index];
+            return GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const FavoriteTopicsScreen(),
+                    builder: (context) => NewsDetailScreen(article: article),
                   ),
                 );
               },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {},
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign Out'),
-              onTap: signOut,
-            ),
-          ],
-        ),
-      ),
-      body: PageView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: articles.length + (isLoading ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == articles.length) {
-            return const Center(child: CircularProgressIndicator());
-          }
+              child: NewsCard(
+                title: article['title'] ?? 'No title',
+                summary: article['description'] ?? 'No description',
+                imageUrl: article['urlToImage'] ?? '',
+                source: article['source']['name'] ?? 'Unknown Source',
+                onShare: () {
+                  Clipboard.setData(ClipboardData(text: article['url']))
+                      .then((_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Link copied to clipboard')),
+                    );
+                  });
+                },
+                onSummarize: () async {
+                  final content =
+                      article['content'] ?? article['description'] ?? '';
+                  if (content.isEmpty) {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text(
+                            'Summary',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          content:
+                              const Text('No content available to summarize.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text(
+                                'Close',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    return;
+                  }
 
-          final article = articles[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => NewsDetailScreen(article: article),
-                ),
-              );
-            },
-            child: NewsCard(
-              title: article['title'] ?? 'No title',
-              summary: article['description'] ?? 'No description',
-              imageUrl: article['urlToImage'] ?? '',
-              source: article['source']['name'] ?? 'Unknown Source',
-              onShare: () {
-                Clipboard.setData(ClipboardData(text: article['url'])).then((_) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Link copied to clipboard')),
-                  );
-                });
-              },
-              onSummarize: () async {
-                final content = article['content'] ?? article['description'] ?? '';
-                if (content.isEmpty) {
+                  final summary = await summarizeArticle(content);
+
                   showDialog(
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: const Text('Summary'),
-                        content: const Text('No content available to summarize.'),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        backgroundColor: Colors.white,
+                        title: const Text(
+                          'Summary',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                        content: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                summary,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  '- Generated by Gemini',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         actions: [
                           TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.red.withOpacity(0.1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
                             onPressed: () {
                               Navigator.of(context).pop();
                             },
-                            child: const Text('Close'),
+                            child: const Text(
+                              'Close',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ],
+                        actionsPadding:
+                            const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       );
                     },
                   );
-                  return;
-                }
-
-                final summary = await summarizeArticle(content);
-
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text('Summary'),
-                      content: Text('$summary\n\n- generated by Gemini'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('Close'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
+                },
+              ),
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 5,
+              blurRadius: 7,
+              offset: const Offset(0, -3),
             ),
-          );
-        },
+          ],
+        ),
+        child: BottomNavigationBar(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          selectedItemColor: Colors.red,
+          unselectedItemColor: Colors.grey,
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.normal,
+            fontSize: 12,
+          ),
+          type: BottomNavigationBarType.fixed,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.home_outlined),
+              ),
+              activeIcon: Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.home),
+              ),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.favorite_outline),
+              ),
+              activeIcon: Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.favorite),
+              ),
+              label: 'Favorites',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.person_outline),
+              ),
+              activeIcon: Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.person),
+              ),
+              label: 'Profile',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+        ),
       ),
     );
   }
@@ -339,46 +519,130 @@ class NewsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (imageUrl.isNotEmpty)
-            Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              height: 200,
-              width: double.infinity,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+      margin: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 12), // increased margins
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24), // increased radius
+      ),
+      elevation: 10,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 3,
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(summary, style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 8),
-                Text("Source: $source", style: const TextStyle(fontSize: 14, color: Color.fromARGB(255, 158, 96, 3))),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.share),
-                      onPressed: onShare,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (imageUrl.isNotEmpty)
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.summarize),
-                      onPressed: onSummarize,
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      height: 220, // increased height
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 220,
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.broken_image,
+                            size: 80, color: Colors.grey),
+                      ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
+            Padding(
+              padding: const EdgeInsets.all(20.0), // increased padding
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 22, // increased font size
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12), // increased spacing
+                  Text(
+                    summary,
+                    style: TextStyle(
+                      fontSize: 16, // increased font size
+                      color: Colors.grey[800],
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 20), // increased spacing
+                  Text(
+                    "Source: $source",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 20), // increased spacing
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.red.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: onShare,
+                          child: const Text(
+                            'Copy Link',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.red.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: onSummarize,
+                          child: const Text(
+                            'Summarize',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -418,14 +682,58 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.article['source']['name'] ?? 'News Source'),
+        elevation: 4,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.red, Colors.redAccent],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+        ),
+        title: Text(
+          'Article Detail',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+            color: Colors.white,
+            shadows: [
+              Shadow(
+                color: Colors.black.withOpacity(0.3),
+                offset: const Offset(0, 1),
+                blurRadius: 2,
+              ),
+            ],
+          ),
+        ),
+        centerTitle: true,
       ),
       body: Stack(
         children: [
-          WebViewWidget(controller: _controller),
+          Container(
+            color: Colors.white,
+            child: WebViewWidget(controller: _controller),
+          ),
           if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 3,
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const CircularProgressIndicator(),
+              ),
             ),
         ],
       ),
