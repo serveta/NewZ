@@ -229,6 +229,10 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  String formatDate(String date) {
+    return date.split('T').first;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -289,6 +293,8 @@ class _MainScreenState extends State<MainScreen> {
                 summary: article['description'] ?? 'No description',
                 imageUrl: article['urlToImage'] ?? '',
                 source: article['source']['name'] ?? 'Unknown Source',
+                author: article['author'] ?? article['source'],
+                publishedDate: formatDate(article['publishedAt']) ?? 'Unknown',
                 onShare: () {
                   Clipboard.setData(ClipboardData(text: article['url']))
                       .then((_) {
@@ -503,6 +509,8 @@ class NewsCard extends StatelessWidget {
   final String summary;
   final String imageUrl;
   final String source;
+  final String author;
+  final String publishedDate;
   final VoidCallback onShare;
   final VoidCallback onSummarize;
 
@@ -512,6 +520,8 @@ class NewsCard extends StatelessWidget {
     required this.summary,
     required this.imageUrl,
     required this.source,
+    required this.author,
+    required this.publishedDate,
     required this.onShare,
     required this.onSummarize,
   }) : super(key: key);
@@ -520,9 +530,9 @@ class NewsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 12), // increased margins
+          horizontal: 16, vertical: 12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24), // increased radius
+        borderRadius: BorderRadius.circular(24),
       ),
       elevation: 10,
       child: Container(
@@ -552,7 +562,7 @@ class NewsCard extends StatelessWidget {
                     child: Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
-                      height: 220, // increased height
+                      height: 220,
                       width: double.infinity,
                       errorBuilder: (context, error, stackTrace) => Container(
                         height: 220,
@@ -565,29 +575,47 @@ class NewsCard extends StatelessWidget {
                 ],
               ),
             Padding(
-              padding: const EdgeInsets.all(20.0), // increased padding
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 4),
+                  Text(
+                    "Published on: $publishedDate",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 22, // increased font size
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 12), // increased spacing
+                  const SizedBox(height: 12),
+                  Text(
+                    "Author: $author",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     summary,
                     style: TextStyle(
-                      fontSize: 16, // increased font size
+                      fontSize: 16,
                       color: Colors.grey[800],
                       height: 1.6,
                     ),
                   ),
-                  const SizedBox(height: 20), // increased spacing
+                  const SizedBox(height: 20),
                   Text(
                     "Source: $source",
                     style: const TextStyle(
@@ -596,7 +624,7 @@ class NewsCard extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 20), // increased spacing
+                  const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
