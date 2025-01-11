@@ -27,7 +27,8 @@ class VerticalSwipe extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  final List<String>? selectedTopics;
+  const MainScreen({Key? key, this.selectedTopics}) : super(key: key);
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -53,7 +54,13 @@ class _MainScreenState extends State<MainScreen> {
       model: 'gemini-1.5-flash-latest',
       apiKey: 'AIzaSyAQAdcRtoDGiXTHEtp-tR-ZfvgAEPUWjxE',
     );
-    _loadFavorites();
+
+    if (widget.selectedTopics != null && widget.selectedTopics!.isNotEmpty) {
+      favoriteTopics = widget.selectedTopics!;
+      fetchNews();
+    } else {
+      _loadFavorites();
+    }
   }
 
   Future<void> _loadFavorites() async {
