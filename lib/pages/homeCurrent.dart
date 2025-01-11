@@ -28,6 +28,7 @@ class VerticalSwipe extends StatelessWidget {
 
 class MainScreen extends StatefulWidget {
   final List<String>? selectedTopics;
+
   const MainScreen({Key? key, this.selectedTopics}) : super(key: key);
 
   @override
@@ -49,17 +50,28 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize generative model
+    print("MainScreen initState called");
     generativeModel = GenerativeModel(
       model: 'gemini-1.5-flash-latest',
       apiKey: 'AIzaSyAQAdcRtoDGiXTHEtp-tR-ZfvgAEPUWjxE',
     );
-
     if (widget.selectedTopics != null && widget.selectedTopics!.isNotEmpty) {
       favoriteTopics = widget.selectedTopics!;
-      fetchNews();
+      fetchNews(); // fetch directly with updated topics
     } else {
-      _loadFavorites();
+      _loadFavorites(); // fallback to Firestore
+    }
+  }
+
+  Future<void> _initializeNews() async {
+    print("Initializing news...");
+    if (widget.selectedTopics != null && widget.selectedTopics!.isNotEmpty) {
+      setState(() {
+        favoriteTopics = widget.selectedTopics!;
+      });
+      await fetchNews();
+    } else {
+      await _loadFavorites();
     }
   }
 
@@ -96,7 +108,7 @@ class _MainScreenState extends State<MainScreen> {
 
     print("Fetching news... Favorites: $favoriteTopics");
     String apiKey =
-        '658a350d8d594b5184c29f70e4633191'; // Replace with valid NewsAPI.org key
+        'a061bb6853c84b7f92a0506c8ef9b186'; // Replace with valid NewsAPI.org key
     DateTime today = DateTime.now();
     DateTime oneWeekAgo = today.subtract(const Duration(days: 7));
     String formattedToday =
