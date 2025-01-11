@@ -19,29 +19,31 @@ class HomePage extends StatelessWidget {
     return Text(user?.email ?? 'User Email');
   }
 
-  Widget _signOutButton(){
-    return ElevatedButton(onPressed: signOut, child: const Text('Sign Out'),);
+  Widget _signOutButton() {
+    return ElevatedButton(
+      onPressed: signOut,
+      child: const Text('Sign Out'),
+    );
   }
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: _title(),
-      ),
-      body: Container(
-        height: double.infinity,
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            _userUid(),
-            _signOutButton(),
-          ],
+        appBar: AppBar(
+          title: _title(),
         ),
-      )
-    );
+        body: Container(
+          height: double.infinity,
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _userUid(),
+              _signOutButton(),
+            ],
+          ),
+        ));
   }
 }

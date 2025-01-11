@@ -45,7 +45,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     }
   }
 
-Future<void> resetPassword() async {
+  Future<void> resetPassword() async {
     if (_controllerEmail.text.isEmpty) {
       setState(() {
         errorMessage = 'Please enter your email address';
@@ -55,7 +55,7 @@ Future<void> resetPassword() async {
     }
 
     try {
-      await _auth.sendPasswordResetEmail(_controllerEmail.text);
+      await _auth.sendPasswordResetEmail(email: _controllerEmail.text);
       setState(() {
         successMessage = 'Password reset email sent. Please check your inbox.';
         errorMessage = null;
@@ -91,7 +91,8 @@ Future<void> resetPassword() async {
               const SizedBox(height: 40),
               Text(
                 isLogin ? 'Login' : 'Create\nAccount',
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 40),
               TextField(

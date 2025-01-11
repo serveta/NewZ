@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "660294213786",
     "project_id": "newz-00205",
-    "storage_bucket": "newz-00205.appspot.com"
+    "storage_bucket": "newz-00205.firebasestorage.app"
   },
   "client": [
     {
@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "660294213786-qq7ll59c7dst5rtu9hqg6ks5q9ks3rs5.apps.googleusercontent.com",
+          "client_id": "660294213786-s2d11v6s2rtbj3ibi6gter1ln72guquo.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.newz",
-            "certificate_hash": "74e7cf270f8193b479240e2091f24406a95cf671"
+            "certificate_hash": "4214d01b5d822345ec13b71d221d7dc1520470f7"
           }
         },
         {
