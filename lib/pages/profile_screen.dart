@@ -4,80 +4,117 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:newz/auth.dart';
 import 'package:newz/pages/login_register_page.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final FirebaseAuth _auth = FirebaseAuth.instance;
-    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
 
+class _ProfileScreenState extends State<ProfileScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<String> favoriteTopics = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteTopics();
+  }
+
+  Future<void> _loadFavoriteTopics() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      DocumentSnapshot snapshot =
+          await _firestore.collection('users').doc(user.uid).get();
+      if (snapshot.exists) {
+        var data = snapshot.data() as Map<String, dynamic>;
+        setState(() {
+          favoriteTopics = List<String>.from(data['favoriteTopics'] ?? []);
+        });
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    await Auth().signOut();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const CreateAccountPage()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: Colors.white,
         elevation: 0,
+        titleTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
       ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future:
-            _firestore.collection('users').doc(_auth.currentUser?.uid).get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final data = snapshot.data?.data() as Map<String, dynamic>?;
-          final topics = data?['favoriteTopics'] as List<dynamic>? ?? [];
-
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.email),
-                    title: Text(_auth.currentUser?.email ?? 'No email'),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Favorite Topics',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: topics.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        leading: const Icon(Icons.topic),
-                        title: Text(topics[index].toString()),
-                      );
-                    },
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await Auth().signOut();
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => const CreateAccountPage(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                    ),
-                    child: const Text('Sign Out'),
-                  ),
-                ),
-              ],
+      body: Container(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            Card(
+              elevation: 4,
+              child: ListTile(
+                leading: const Icon(Icons.email),
+                title: const Text('Email'),
+                subtitle: Text(_auth.currentUser?.email ?? 'No email'),
+              ),
             ),
-          );
-        },
+            const SizedBox(height: 20),
+            const Text(
+              'Favorite Topics',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: Card(
+                elevation: 4,
+                child: ListView.builder(
+                  itemCount: favoriteTopics.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      leading: const Icon(Icons.topic),
+                      title: Text(favoriteTopics[index]),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _signOut,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                child: const Text(
+                  'Sign Out',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

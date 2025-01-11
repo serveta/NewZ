@@ -15,13 +15,36 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<String> topics = [
-    'Sports',
+    'Politics',
     'Technology',
-    'Health',
     'Business',
+    'Sports',
     'Entertainment',
-    'General',
-    'Science'
+    'Science',
+    'Health',
+    'World News',
+    'Local News',
+    'Education',
+    'Environment',
+    'Crime',
+    'Lifestyle',
+    'Travel',
+    'Food',
+    'Art and Culture',
+    'Real Estate',
+    'Automotive',
+    'Fashion',
+    'Startups',
+    'Finance',
+    'Gaming',
+    'Space Exploration',
+    'Opinion',
+    'Celebrity News',
+    'Weather',
+    'History',
+    'Social Issues',
+    'Religion',
+    'Events and Festivals'
   ];
   List<String> favoriteTopics = [];
 
@@ -48,22 +71,20 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
   }
 
   // Firestore'a favori konuları kaydetme
-  void _saveFavorites(List<String> selectedTopics) async {
+  void _saveFavorites() async {
     User? user = _auth.currentUser;
 
     if (user != null) {
       await _firestore.collection('users').doc(user.uid).set({
-        'favoriteTopics': selectedTopics,
+        'favoriteTopics': favoriteTopics,
+        'hasSelectedFavorites': true,
       }, SetOptions(merge: true));
-    }
-  }
 
-  void _syncAndNavigate() {
-    _saveFavorites(favoriteTopics);
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
-    );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    }
   }
 
   @override
@@ -73,26 +94,14 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
-        title: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-          child: const Text(
-            'Favorite Topics',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-              color: Colors.black,
-              shadows: [
-                Shadow(
-                  color: Colors.grey,
-                  offset: Offset(0, 1),
-                  blurRadius: 2,
-                ),
-              ],
-            ),
+        title: const Text(
+          'Select Your Favorite Topics',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        centerTitle: false,
       ),
       body: Container(
         color: Colors.white,
@@ -101,9 +110,8 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Select your favorite topics to get personalized news',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+              'Select topics to personalize your news feed',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -155,7 +163,7 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
         width: MediaQuery.of(context).size.width * 0.9,
         height: 50,
         child: ElevatedButton(
-          onPressed: _syncAndNavigate,
+          onPressed: _saveFavorites,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red,
             shape: RoundedRectangleBorder(
