@@ -1,8 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:newz/auth.dart';
-import 'package:flutter/material.dart';
 import 'package:newz/pages/favorite_topics_screen.dart';
 import 'package:newz/pages/homeCurrent.dart';
+import 'package:newz/pages/profile_screen.dart'; // Import ProfileScreen
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,10 +16,10 @@ class _HomePageState extends State<HomePage> {
   final User? user = Auth().currentUser;
   int _selectedIndex = 0;
 
-  static const List<Widget> _widgetOptions = <Widget>[
+  static final List<Widget> _widgetOptions = <Widget>[
     MainScreen(),
-    FavoriteTopicsScreen(),
-    Center(child: Text('Profile')),
+    const FavoriteTopicsScreen(),
+    const ProfileScreen(), // Ensure ProfileScreen is included
   ];
 
   void _onItemTapped(int index) {
@@ -38,36 +39,6 @@ class _HomePageState extends State<HomePage> {
         fontSize: 24,
         fontWeight: FontWeight.bold,
         color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _userEmail() {
-    return Text(
-      user?.email ?? 'User Email',
-      style: const TextStyle(
-        fontSize: 18,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _signOutButton() {
-    return ElevatedButton(
-      onPressed: signOut,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      ),
-      child: const Text(
-        'Sign Out',
-        style: TextStyle(
-          fontSize: 16,
-          color: Colors.white,
-        ),
       ),
     );
   }

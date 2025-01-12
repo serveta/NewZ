@@ -37,11 +37,14 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
 
     if (user != null) {
       DocumentSnapshot snapshot =
-          await _firestore.collection('users').doc(user.uid).get();
+      await _firestore.collection('users').doc(user.uid).get();
       if (snapshot.exists) {
         var data = snapshot.data() as Map<String, dynamic>;
         setState(() {
           favoriteTopics = List<String>.from(data['favoriteTopics'] ?? []);
+          if (favoriteTopics.isEmpty) {
+            favoriteTopics.add('General');
+          }
         });
       }
     }
@@ -59,12 +62,13 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
   }
 
   void _syncAndNavigate() {
+    if (favoriteTopics.isEmpty) {
+      favoriteTopics.add('General'); // Eğer boşsa, General eklenir.
+    }
     _saveFavorites(favoriteTopics);
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
-    );
+    Navigator.pop(context, favoriteTopics); // Güncellenen favori konuları geri döndür.
   }
+
 
   @override
   Widget build(BuildContext context) {
