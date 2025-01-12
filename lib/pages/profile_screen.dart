@@ -28,7 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     User? user = _auth.currentUser;
     if (user != null) {
       DocumentSnapshot snapshot =
-      await _firestore.collection('users').doc(user.uid).get();
+          await _firestore.collection('users').doc(user.uid).get();
       if (snapshot.exists) {
         var data = snapshot.data() as Map<String, dynamic>;
         setState(() {
@@ -40,21 +40,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _showTestNotification() async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-    AndroidNotificationDetails(
+        AndroidNotificationDetails(
       'test_notification_channel',
       'Test Notification',
+      channelDescription: 'NewZ Test Notification',
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
     );
     const NotificationDetails platformChannelSpecifics =
-    NotificationDetails(android: androidPlatformChannelSpecifics);
+        NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await flutterLocalNotificationsPlugin.show(
       0,
       'NewZ',
       'Stay updated with the latest news!',
       platformChannelSpecifics,
+      payload: 'test_payload',
     );
   }
 
@@ -75,17 +77,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         titleTextStyle: const TextStyle(
-          color: Colors.black,
-          fontSize: 20,
+          fontSize: 24,
           fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+          color: Colors.black,
         ),
         iconTheme: const IconThemeData(color: Colors.black),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: _showTestNotification,
-          ),
-        ],
       ),
       body: Container(
         color: Colors.white,
@@ -99,9 +96,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
               ),
+              color: Colors.white,
               child: ListTile(
                 leading: const Icon(Icons.email, color: Colors.red),
-                title: const Text('Email'),
+                title: const Text('E-mail'),
                 subtitle: Text(_auth.currentUser?.email ?? 'No email'),
               ),
             ),
@@ -120,11 +118,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
+                color: Colors.white,
                 child: ListView.builder(
                   itemCount: favoriteTopics.length,
                   itemBuilder: (context, index) {
                     return ListTile(
-                      leading: const Icon(Icons.topic, color: Colors.red),
+                      leading: const Icon(Icons.favorite, color: Colors.red),
                       title: Text(favoriteTopics[index]),
                     );
                   },
