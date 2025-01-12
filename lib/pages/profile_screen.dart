@@ -10,32 +10,6 @@ class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.notifications),
-      onPressed: () async {
-        const AndroidNotificationDetails androidPlatformChannelSpecifics =
-            AndroidNotificationDetails(
-          'test_notification_channel',
-          'Test Notification',
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: false,
-        );
-        const NotificationDetails platformChannelSpecifics =
-            NotificationDetails(android: androidPlatformChannelSpecifics);
-
-        await flutterLocalNotificationsPlugin.show(
-          0,
-          'Test Notification',
-          'This is a test notification',
-          platformChannelSpecifics,
-        );
-      },
-    );
-  }
-
-  @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
@@ -54,7 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     User? user = _auth.currentUser;
     if (user != null) {
       DocumentSnapshot snapshot =
-          await _firestore.collection('users').doc(user.uid).get();
+      await _firestore.collection('users').doc(user.uid).get();
       if (snapshot.exists) {
         var data = snapshot.data() as Map<String, dynamic>;
         setState(() {
@@ -62,6 +36,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     }
+  }
+
+  Future<void> _showTestNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails(
+      'test_notification_channel',
+      'Test Notification',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
+    const NotificationDetails platformChannelSpecifics =
+    NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'NewZ',
+      'Stay updated with the latest news!',
+      platformChannelSpecifics,
+    );
   }
 
   Future<void> _signOut() async {
@@ -86,6 +80,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fontWeight: FontWeight.bold,
         ),
         iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: _showTestNotification,
+          ),
+        ],
       ),
       body: Container(
         color: Colors.white,
