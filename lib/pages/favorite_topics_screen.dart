@@ -62,12 +62,13 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
   }
 
   void _syncAndNavigate() {
+    if (favoriteTopics.isEmpty) {
+      favoriteTopics.add('General'); // Eğer boşsa, General eklenir.
+    }
     _saveFavorites(favoriteTopics);
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
-    );
+    Navigator.pop(context, favoriteTopics); // Güncellenen favori konuları geri döndür.
   }
+
 
   @override
   Widget build(BuildContext context) {
