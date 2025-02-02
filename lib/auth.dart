@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:newz/main.dart'; // Import the main.dart file
 
 class Auth {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -15,6 +16,7 @@ class Auth {
   }) async {
     await _firebaseAuth.signInWithEmailAndPassword(
         email: email, password: password);
+    await showWelcomeNotification(); // Show welcome notification
   }
 
   Future<void> createUserWithEmailAndPassword({
@@ -23,6 +25,7 @@ class Auth {
   }) async {
     await _firebaseAuth.createUserWithEmailAndPassword(
         email: email, password: password);
+    await showWelcomeNotification(); // Show welcome notification
   }
 
   Future<void> signInWithGoogle() async {
@@ -32,14 +35,15 @@ class Auth {
         throw Exception('Google Sign In cancelled by user');
       }
       final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
       await _firebaseAuth.signInWithCredential(credential);
+      await showWelcomeNotification(); // Show welcome notification
     } catch (e) {
-      throw Exception('Google ile giriş başarısız oldu: $e');
+      throw Exception('Google sign-in failed: $e');
     }
   }
 
