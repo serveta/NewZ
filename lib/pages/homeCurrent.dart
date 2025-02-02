@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+//import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:newz/auth.dart';
 import 'package:newz/pages/favorite_topics_screen.dart';
 import 'package:http/http.dart' as http;
@@ -63,29 +63,14 @@ class _MainScreenState extends State<MainScreen> {
     Center(child: Text('Profile')),
   ];
 
-  void _onItemTapped(int index) async {
+  void _onItemTapped(int index) {
     if (index == 1) {
-      // FavoriteTopicsScreen'e yönlendir ve favori konuları geri al
-      final updatedFavorites = await Navigator.push(
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const FavoriteTopicsScreen(),
         ),
       );
-
-      // Eğer favori konular güncellendiyse ana sayfayı güncelle
-      if (updatedFavorites != null && updatedFavorites is List<String>) {
-        setState(() {
-          favoriteTopics = updatedFavorites;
-          previousFavorites = List.from(updatedFavorites);
-          articles.clear();
-          page = 1;
-          seenArticles.clear();
-        });
-
-        // Haberleri yeniden yükle
-        fetchNews();
-      }
     } else if (index == 2) {
       Navigator.push(
         context,
@@ -111,7 +96,7 @@ class _MainScreenState extends State<MainScreen> {
       return 'Failed to generate summary.';
     }
   }
- // BURADAN aldım favorite
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -174,7 +159,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-// BURAYA KADAR favorite
   Future<void> signOut() async {
     await Auth().signOut();
   }
@@ -256,10 +240,6 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  String formatDate(String date) {
-    return date.split('T').first;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -320,9 +300,6 @@ class _MainScreenState extends State<MainScreen> {
                 summary: article['description'] ?? 'No description',
                 imageUrl: article['urlToImage'] ?? '',
                 source: article['source']['name'] ?? 'Unknown Source',
-                author: article['author'] ?? article['source']['name'],
-                publishedDate: formatDate(article['publishedAt']) ?? 'Unknown',
-
                 onShare: () {
                   Clipboard.setData(ClipboardData(text: article['url']))
                       .then((_) {
@@ -539,8 +516,6 @@ class NewsCard extends StatelessWidget {
   final String source;
   final VoidCallback onShare;
   final VoidCallback onSummarize;
-  final String author;
-  final String publishedDate;
 
   const NewsCard({
     Key? key,
@@ -550,8 +525,6 @@ class NewsCard extends StatelessWidget {
     required this.source,
     required this.onShare,
     required this.onSummarize,
-    required this.author,
-    required this.publishedDate,
   }) : super(key: key);
 
   @override
@@ -607,15 +580,6 @@ class NewsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 4),
-                  Text(
-                    "Published on: $publishedDate",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
                   Text(
                     title,
                     style: const TextStyle(
@@ -623,15 +587,6 @@ class NewsCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                       height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    "Author: $author",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 12), // increased spacing
@@ -795,7 +750,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       ),
     );
   }
-
+/*
   void scheduleNewsReminder() async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
     AndroidNotificationDetails(
@@ -805,7 +760,6 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       priority: Priority.high,
       showWhen: false,
     );
-
     const NotificationDetails platformChannelSpecifics =
     NotificationDetails(android: androidPlatformChannelSpecifics);
 
@@ -813,9 +767,17 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       0,
       'Time to read news',
       'Stay updated with the latest news!',
-      RepeatInterval.everyMinute,
+      RepeatInterval.everyMinute, // Change to RepeatInterval.everyTwoHours
       platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exact,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
+
+  @override
+  void initStateNewsReminder() {
+    super.initState();
+    scheduleNewsReminder();
+  }
+}
+*/
 }
